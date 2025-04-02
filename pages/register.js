@@ -74,9 +74,6 @@ const Register = () => {
     } else if (!validateEmail(email)) {
       setSnackbarMessage('Please enter a valid email address.');
       setOpenSnackbar(true);
-    } else if (password ) {
-      setSnackbarMessage('Please enter valid Password!');
-      setOpenSnackbar(true);
     } else if (!validateDateOfBirth(dateOfBirth)) {
       setSnackbarMessage('Please enter a valid date of birth (YYYY-MM-DD) above 2009 ');
       setOpenSnackbar(true);
