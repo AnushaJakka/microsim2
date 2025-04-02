@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Header from '../Layout/Header';
+import Header from './components/Layout/Header';
 import ControlPointIcon from '@mui/icons-material/ControlPoint';
 import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined';
 import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
