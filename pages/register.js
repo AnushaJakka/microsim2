@@ -100,7 +100,6 @@ const Register = () => {
         setSnackbarMessage(error.response?.data?.error);
         setOpenSnackbar(true);
       }
-      
     }
   };
 
