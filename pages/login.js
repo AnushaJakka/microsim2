@@ -84,7 +84,7 @@ const Login = () => {
             <Typography fontSize={35} fontWeight={"bold"}>MicroSim Learning</Typography>
           </Stack>
         </Grid>
-        <Grid item xs={12} md={6} sx={{paddingLeft:{ xs: 5, md: 40 }} }>
+        <Grid item xs={12} md={6} sx={{paddingLeft:{ xs: 2, md: 40 }} }>
           <Paper
             elevation={3}
             sx={{
