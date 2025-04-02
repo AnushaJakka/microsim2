@@ -68,7 +68,7 @@ const Register = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!firstName || !lastName || !email || !password  || !gender || !dateOfBirth ) {
+    if (!firstName || !lastName || !email || !password   || !dateOfBirth || !gender ) {
       setSnackbarMessage('Please fill in all fields.');
       setOpenSnackbar(true);
     } else if (!validateEmail(email)) {
