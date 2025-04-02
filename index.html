@@ -1,0 +1,302 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; background-color: #f9f9f9; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script>
+   // Three.js Gear and Pulley Demonstration
+function init() {
+  // Create scene, camera, and renderer
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf0f0f0);
+  
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 5, 20);
+  camera.lookAt(0, 0, 0);
+  
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+  
+  // Add lights
+  const ambientLight = new THREE.AmbientLight(0x404040);
+  scene.add(ambientLight);
+  
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  directionalLight.position.set(1, 1, 1).normalize();
+  scene.add(directionalLight);
+  
+  // Create materials
+  const redMaterial = new THREE.MeshStandardMaterial({ color: 0xff4444, metalness: 0.5, roughness: 0.2 });
+  const blueMaterial = new THREE.MeshStandardMaterial({ color: 0x4444ff, metalness: 0.5, roughness: 0.2 });
+  const greenMaterial = new THREE.MeshStandardMaterial({ color: 0x44ff44, metalness: 0.5, roughness: 0.2 });
+  
+  // Create gears
+  const bigGear = createGear(5, 1, 32, redMaterial);
+  const mediumGear = createGear(3, 1, 24, blueMaterial);
+  const smallGear = createGear(2, 1, 16, greenMaterial);
+  
+  // Position gears
+  bigGear.position.set(-6, 0, 0);
+  mediumGear.position.set(0, 0, 0);
+  smallGear.position.set(5, 0, 0);
+  
+  // Add gears to scene
+  scene.add(bigGear);
+  scene.add(mediumGear);
+  scene.add(smallGear);
+  
+  // Create pulley system
+  const pulleySystem = createPulleySystem();
+  pulleySystem.position.set(0, -8, 0);
+  scene.add(pulleySystem);
+  
+  // Add controls
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.25;
+  
+  // Animation variables
+  let bigGearRotation = 0;
+  let mediumGearRotation = 0;
+  let smallGearRotation = 0;
+  
+  // Animation loop
+  function animate() {
+    requestAnimationFrame(animate);
+    
+    // Rotate gears at different speeds based on their sizes (gear ratio)
+    bigGearRotation += 0.005;
+    mediumGearRotation -= (bigGear.scale.x / mediumGear.scale.x) * 0.005;
+    smallGearRotation += (mediumGear.scale.x / smallGear.scale.x) * (bigGear.scale.x / mediumGear.scale.x) * 0.005;
+    
+    bigGear.rotation.z = bigGearRotation;
+    mediumGear.rotation.z = mediumGearRotation;
+    smallGear.rotation.z = smallGearRotation;
+    
+    // Animate pulley system
+    animatePulleySystem(pulleySystem, bigGearRotation);
+    
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+  
+  animate();
+}
+
+// Function to create a gear
+function createGear(radius, thickness, teeth, material) {
+  const gear = new THREE.Group();
+  
+  // Create gear body
+  const bodyGeometry = new THREE.CylinderGeometry(radius, radius, thickness, 32);
+  const body = new THREE.Mesh(bodyGeometry, material);
+  body.rotation.x = Math.PI / 2;
+  gear.add(body);
+  
+  // Create teeth
+  const toothHeight = radius * 0.2;
+  const toothWidth = Math.PI * 2 * radius / teeth * 0.4;
+  const toothDepth = thickness * 1.2;
+  
+  for (let i = 0; i < teeth; i++) {
+    const angle = (i / teeth) * Math.PI * 2;
+    const toothGeometry = new THREE.BoxGeometry(toothWidth, toothHeight, toothDepth);
+    const tooth = new THREE.Mesh(toothGeometry, material);
+    
+    tooth.position.x = (radius + toothHeight / 2) * Math.cos(angle);
+    tooth.position.y = (radius + toothHeight / 2) * Math.sin(angle);
+    tooth.rotation.z = angle;
+    
+    gear.add(tooth);
+  }
+  
+  // Create center hole
+  const holeGeometry = new THREE.CylinderGeometry(radius * 0.2, radius * 0.2, thickness * 1.1, 16);
+  const holeMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.7, roughness: 0.2 });
+  const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+  hole.rotation.x = Math.PI / 2;
+  gear.add(hole);
+  
+  gear.scale.set(radius, radius, radius);
+  return gear;
+}
+
+// Function to create pulley system
+function createPulleySystem() {
+  const pulleySystem = new THREE.Group();
+  
+  // Create pulleys
+  const pulleyMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.7, roughness: 0.2 });
+  
+  const pulley1 = createPulley(1.5, 0.5, pulleyMaterial);
+  const pulley2 = createPulley(2, 0.5, pulleyMaterial);
+  
+  pulley1.position.set(-4, 0, 0);
+  pulley2.position.set(4, 0, 0);
+  
+  // Create belt
+  const beltPoints = [];
+  const pulley1Radius = 1.5;
+  const pulley2Radius = 2;
+  const pulleyDistance = 8;
+  
+  // Calculate belt path
+  const angleStep = Math.PI / 20;
+  
+  // Top straight part
+  const tangentAngle = Math.asin((pulley2Radius - pulley1Radius) / pulleyDistance);
+  const startAngle1 = Math.PI / 2 + tangentAngle;
+  const endAngle1 = Math.PI * 2.5 - tangentAngle;
+  
+  const startAngle2 = Math.PI * 2.5 + tangentAngle;
+  const endAngle2 = Math.PI / 2 - tangentAngle;
+  
+  // Add points for pulley1 arc
+  for (let angle = startAngle1; angle <= endAngle1; angle += angleStep) {
+    beltPoints.push(
+      new THREE.Vector3(
+        pulley1.position.x + pulley1Radius * Math.cos(angle),
+        pulley1Radius * Math.sin(angle),
+        0
+      )
+    );
+  }
+  
+  // Add points for bottom straight part
+  beltPoints.push(
+    new THREE.Vector3(
+      pulley1.position.x + pulley1Radius * Math.cos(endAngle1),
+      pulley1Radius * Math.sin(endAngle1),
+      0
+    )
+  );
+  beltPoints.push(
+    new THREE.Vector3(
+      pulley2.position.x + pulley2Radius * Math.cos(startAngle2),
+      pulley2Radius * Math.sin(startAngle2),
+      0
+    )
+  );
+  
+  // Add points for pulley2 arc
+  for (let angle = startAngle2; angle <= endAngle2; angle += angleStep) {
+    beltPoints.push(
+      new THREE.Vector3(
+        pulley2.position.x + pulley2Radius * Math.cos(angle),
+        pulley2Radius * Math.sin(angle),
+        0
+      )
+    );
+  }
+  
+  // Add points for top straight part
+  beltPoints.push(
+    new THREE.Vector3(
+      pulley2.position.x + pulley2Radius * Math.cos(endAngle2),
+      pulley2Radius * Math.sin(endAngle2),
+      0
+    )
+  );
+  beltPoints.push(
+    new THREE.Vector3(
+      pulley1.position.x + pulley1Radius * Math.cos(startAngle1),
+      pulley1Radius * Math.sin(startAngle1),
+      0
+    )
+  );
+  
+  // Create belt geometry
+  const beltGeometry = new THREE.BufferGeometry().setFromPoints(beltPoints);
+  const beltMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+  const belt = new THREE.Line(beltGeometry, beltMaterial);
+  
+  // Create weight (attached to pulley2)
+  const weightGeometry = new THREE.BoxGeometry(1, 2, 1);
+  const weightMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown color
+  const weight = new THREE.Mesh(weightGeometry, weightMaterial);
+  weight.position.set(pulley2.position.x, -3, 0);
+  
+  // Create rope connecting pulley to weight
+  const ropePoints = [
+    new THREE.Vector3(pulley2.position.x, -pulley2Radius, 0),
+    new THREE.Vector3(pulley2.position.x, weight.position.y + 1, 0)
+  ];
+  const ropeGeometry = new THREE.BufferGeometry().setFromPoints(ropePoints);
+  const ropeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+  const rope = new THREE.Line(ropeGeometry, ropeMaterial);
+  
+  // Add all elements to the pulley system
+  pulleySystem.add(pulley1);
+  pulleySystem.add(pulley2);
+  pulleySystem.add(belt);
+  pulleySystem.add(weight);
+  pulleySystem.add(rope);
+  
+  return pulleySystem;
+}
+
+// Function to create a pulley
+function createPulley(radius, thickness, material) {
+  const pulley = new THREE.Group();
+  
+  // Create pulley body
+  const bodyGeometry = new THREE.CylinderGeometry(radius, radius, thickness, 32);
+  const body = new THREE.Mesh(bodyGeometry, material);
+  body.rotation.x = Math.PI / 2;
+  pulley.add(body);
+  
+  // Create center hole
+  const holeGeometry = new THREE.CylinderGeometry(radius * 0.2, radius * 0.2, thickness * 1.1, 16);
+  const holeMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
+  const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+  hole.rotation.x = Math.PI / 2;
+  pulley.add(hole);
+  
+  return pulley;
+}
+
+// Function to animate the pulley system
+function animatePulleySystem(pulleySystem, rotation) {
+  const pulley1 = pulleySystem.children[0];
+  const pulley2 = pulleySystem.children[1];
+  const weight = pulleySystem.children[3];
+  
+  // Rotate pulleys
+  pulley1.rotation.z = rotation * 2;
+  pulley2.rotation.z = -rotation * (pulley1.scale.x / pulley2.scale.x) * 1.5;
+  
+  // Move weight up and down
+  const weightMovement = Math.sin(rotation) * 0.5;
+  weight.position.y = -3 + weightMovement;
+  
+  // Update rope position
+  const rope = pulleySystem.children[4];
+  const ropePoints = [
+    new THREE.Vector3(pulley2.position.x, -pulley2.scale.x, 0),
+    new THREE.Vector3(pulley2.position.x, weight.position.y + 1, 0)
+  ];
+  
+  rope.geometry.setFromPoints(ropePoints);
+  rope.geometry.attributes.position.needsUpdate = true;
+}
+
+init();
+  </script>
+</body>
+</html>
