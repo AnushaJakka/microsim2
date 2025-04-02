@@ -48,7 +48,7 @@ const Login = () => {
           setwaiting(false)
           setOpenSnackbar(true);
           Cookies.set('access_token', response.data.access, { expires: 7 });
-          setTimeout(() => navigate.push("/components/Resource/MainContent"), 3000);
+          setTimeout(() => navigate.push("/home"), 3000);
         }
       } catch(error) {
         setwaiting(false)
