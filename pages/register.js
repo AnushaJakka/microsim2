@@ -127,7 +127,7 @@ const Register = () => {
             </Stack>
           </Grid>
   
-          <Grid item xs={12} md={6} sx={{ paddingLeft: { xs: 0, md: 40 } }}>
+          <Grid item xs={12} md={6} sx={{ paddingLeft: { xs: 0, md: 40 }, paddingRight: { xs: "7", md: 0 } } }>
             <Paper
               elevation={3}
               sx={{
@@ -137,10 +137,10 @@ const Register = () => {
                 alignItems: "center",
                 mt: { md: "10%", xs: "0" },
                 mb: { md: "10%", xs: "25%" },
-                mr:{md:"0", xs:"30%"},
+                mr:{md:"20", xs:"30%"},
                 p: 3,
                 mx: {xs:"5%",md:'auto'},
-                width: {md:400,xs:450,sm:200},
+                width: {md:400,xs:"400",sm:200},
                 boxShadow:10
               }}
               component="form"
