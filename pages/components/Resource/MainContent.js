@@ -141,10 +141,10 @@ const MainContent = () => {
       <div className="bg-gray-900 text-gray-300 p-4 rounded-lg font-mono text-sm flex-1 flex overflow-auto">
         {simulationActive ? (
           <div className="w-full h-full bg-black text-white">
-             {activeFormat=== "p5js" && <P5jS running={true} result={codeOutput}/>}
-            {activeFormat=== "threejs" && <ThreejS running={true} result={codeOutput}/>}
-            {activeFormat=== "d3js" && <D3Editor running={true} result={codeOutput}/>}
-            {activeFormat=== "mermaidjs" && <MermaidEditor running={true} result={codeOutput}/>} 
+            //  {activeFormat=== "p5js" && <P5jS running={true} result={codeOutput}/>}
+            // {activeFormat=== "threejs" && <ThreejS running={true} result={codeOutput}/>}
+            // {activeFormat=== "d3js" && <D3Editor running={true} result={codeOutput}/>}
+            // {activeFormat=== "mermaidjs" && <MermaidEditor running={true} result={codeOutput}/>} 
           </div>
         ) :null
         }
