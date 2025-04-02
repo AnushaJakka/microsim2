@@ -1,10 +1,10 @@
-import P5jS from '@/pages/components/Viewer/p5';
+import P5jS from '../Viewer/p5';
 import React ,{ useEffect, useRef, useState } from 'react'
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ThreejS from '../../Viewer/Threejs';
-import D3Editor from '../../Viewer/D3Editor';
-import MermaidEditor from '../../Viewer/Mermaid';
+import ThreejS from '../Viewer/Threejs';
+import D3Editor from '../Viewer/D3Editor';
+import MermaidEditor from '../Viewer/Mermaid';
 import imageCompression from 'browser-image-compression';
 
 

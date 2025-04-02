@@ -18,11 +18,18 @@ const MainContent = () => {
   
   
 
-  const fetchWikiData = () => {
+  const fetchWikiData = async () => {
     if (!wikipediaInput) return;
     setIsProcessing(true);
-    console.log('Fetching Wikipedia data for:', wikipediaInput);
-    setTimeout(() => setIsProcessing(false), 2000);
+    try {
+      console.log('Fetching Wikipedia data for:', wikipediaInput);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setSummary(`Fetched summary for ${wikipediaInput}`);
+    } catch (error) {
+      console.error('Error fetching Wikipedia data:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleFormatChange = (id) => {
@@ -40,10 +47,11 @@ const MainContent = () => {
   );
 
   useEffect(() => {
-    if (activeTab === 'wikipedia') {
+    if (activeTab === 'wikipedia' && wikipediaInput) {
       fetchWikiData();
     }
-  }, [activeFormat]);
+  }, [wikipediaInput]);
+
 
   return (
     <div className='bg-white'>
@@ -89,7 +97,7 @@ const MainContent = () => {
             id="threejs" 
             label="Three.js" 
             icon="🧊" 
-            isActive={activeFormat === 'threejs'} 
+            // isActive={activeFormat === 'threejs'} 
           />
           <FormatButton 
             id="d3js" 
@@ -141,10 +149,10 @@ const MainContent = () => {
       <div className="bg-gray-900 text-gray-300 p-4 rounded-lg font-mono text-sm flex-1 flex overflow-auto">
         {simulationActive ? (
           <div className="w-full h-full bg-black text-white">
-             {/* {activeFormat=== "p5js" && <P5jS running={true} result={codeOutput}/>}
+             {activeFormat=== "p5js" && <P5jS running={true} result={codeOutput}/>}
             {activeFormat=== "threejs" && <ThreejS running={true} result={codeOutput}/>}
             {activeFormat=== "d3js" && <D3Editor running={true} result={codeOutput}/>}
-            {activeFormat=== "mermaidjs" && <MermaidEditor running={true} result={codeOutput}/>}  */}
+            {activeFormat=== "mermaidjs" && <MermaidEditor running={true} result={codeOutput}/>} 
           </div>
         ) :null
         }
