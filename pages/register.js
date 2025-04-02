@@ -68,23 +68,19 @@ const Register = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!firstName || !lastName || !email || !password || !phonenumber || !gender || !dateOfBirth || !confPassword) {
+    if (!firstName || !lastName || !email || !password  || !gender || !dateOfBirth ) {
       setSnackbarMessage('Please fill in all fields.');
       setOpenSnackbar(true);
     } else if (!validateEmail(email)) {
       setSnackbarMessage('Please enter a valid email address.');
       setOpenSnackbar(true);
-    } else if (password !== confPassword) {
-      setSnackbarMessage('Password and Confirm Password Should Be Same');
+    } else if (password ) {
+      setSnackbarMessage('Please enter valid Password!');
       setOpenSnackbar(true);
     } else if (!validateDateOfBirth(dateOfBirth)) {
       setSnackbarMessage('Please enter a valid date of birth (YYYY-MM-DD) above 2009 ');
       setOpenSnackbar(true);
-    // } else if (!/^\d{7,15}$/.test(phonenumber)) {
-    //   setSnackbarMessage("Please enter a valid phone number (7-15 digits).");
-    //   setOpenSnackbar(true);;
     } else {
-      setwaiting(true);
       try {
         const response = await axios.post('https://micro-sim-backend.vercel.app/api/register/', {
           first_name: firstName,
@@ -107,7 +103,7 @@ const Register = () => {
         setSnackbarMessage(error.response?.data?.error);
         setOpenSnackbar(true);
       }
-      setWaiting(false);
+      
     }
   };
 
@@ -269,32 +265,6 @@ const Register = () => {
                     />
                   </FormControl>
                 </Grid>
-  
-                {/* <Grid size={6}>
-                  <FormControl fullWidth variant="outlined" >
-                    <InputLabel htmlFor="outlined-adornment-password">Confirm Password</InputLabel>
-                    <OutlinedInput
-                      id="outlined-adornment-password"
-                      type={showConfPassword ? 'text' : 'password'}
-                      value={confPassword}
-                      onChange={(e) => setConfPassword(e.target.value)}
-                      endAdornment={
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowConfPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                          >
-                            {showConfPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                      label="Confirm Password"
-                    />
-                  </FormControl>
-                </Grid> */}
-            
               
               <Grid item size={12}>
                 <FormControl sx={{ ml: 1, width: { md: '95%', xs: "95%" } }} variant="outlined">
@@ -315,7 +285,6 @@ const Register = () => {
                   {snackbarMessage}
                 </Alert>
               </Snackbar>
-  
   
               <Typography mt={1} ml={{ xs: 7, sm: 3, md: 7 }}>
                 Already have an account? {' '}
