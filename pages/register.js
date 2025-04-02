@@ -11,8 +11,8 @@ import axios from 'axios';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
-import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/style.css';
+// import PhoneInput from 'react-phone-input-2';
+// import 'react-phone-input-2/lib/style.css';
 
 const Register = () => {
   const [showPassword, setShowPassword] = React.useState(false);
@@ -28,13 +28,13 @@ const Register = () => {
   const [confPassword, setConfPassword] = React.useState('');
   const [snackbarMessage, setSnackbarMessage] = React.useState('');
   const [waiting, setwaiting] = React.useState(false);
-  const [showConfPassword, setShowConfPassword] = React.useState(false);
-  const [countryCode, setCountryCode] = React.useState('+91'); // Default country code with type
+  // const [showConfPassword, setShowConfPassword] = React.useState(false);
+  // const [countryCode, setCountryCode] = React.useState('+91'); // Default country code with type
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => event.preventDefault();
   const navigate = useRouter();
-  const handleClickShowConfPassword = () => setShowConfPassword((show) => !show);
+  // const handleClickShowConfPassword = () => setShowConfPassword((show) => !show);
 
   const validateEmail = (email) => {
     // Basic email validation regex
@@ -80,9 +80,9 @@ const Register = () => {
     } else if (!validateDateOfBirth(dateOfBirth)) {
       setSnackbarMessage('Please enter a valid date of birth (YYYY-MM-DD) above 2009 ');
       setOpenSnackbar(true);
-    } else if (!/^\d{7,15}$/.test(phonenumber)) {
-      setSnackbarMessage("Please enter a valid phone number (7-15 digits).");
-      setOpenSnackbar(true);;
+    // } else if (!/^\d{7,15}$/.test(phonenumber)) {
+    //   setSnackbarMessage("Please enter a valid phone number (7-15 digits).");
+    //   setOpenSnackbar(true);;
     } else {
       setwaiting(true);
       try {
@@ -90,8 +90,9 @@ const Register = () => {
           first_name: firstName,
           last_name: lastName,
           email,
-          password: confPassword,
-          phone_number: phonenumber,
+          password,
+          // password: confPassword,
+          // phone_number: phonenumber,
           date_of_birth: dateOfBirth,
           gender,
         });
@@ -106,6 +107,7 @@ const Register = () => {
         setSnackbarMessage(error.response?.data?.error);
         setOpenSnackbar(true);
       }
+      setWaiting(false);
     }
   };
 
@@ -241,19 +243,9 @@ const Register = () => {
                     sx={{ height: 55, }}
                   />
                 </Grid>
-                <Grid item size={12} >
-                    <PhoneInput
-                    
-                      country={'us'}
-                      value={phonenumber}
-                      inputStyle={{width:"100%",height:55}}
-                      onChange={setPhonenumber}
-                    />
-                  {/* </FormControl> */}
-                </Grid>
-             
+                
   
-              <Grid size={6}>
+              <Grid size={12}>
                   <FormControl fullWidth variant="outlined">
                     <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
                     <OutlinedInput
@@ -278,7 +270,7 @@ const Register = () => {
                   </FormControl>
                 </Grid>
   
-                <Grid size={6}>
+                {/* <Grid size={6}>
                   <FormControl fullWidth variant="outlined" >
                     <InputLabel htmlFor="outlined-adornment-password">Confirm Password</InputLabel>
                     <OutlinedInput
@@ -301,7 +293,7 @@ const Register = () => {
                       label="Confirm Password"
                     />
                   </FormControl>
-                </Grid>
+                </Grid> */}
             
               
               <Grid item size={12}>
