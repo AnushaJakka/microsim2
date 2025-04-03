@@ -4,7 +4,9 @@ import ControlPointIcon from '@mui/icons-material/ControlPoint';
 import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined';
 import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
 import ExpandCircleDownOutlinedIcon from '@mui/icons-material/ExpandCircleDownOutlined';
-
+import SendIcon from '@mui/icons-material/Send';
+import imageCompression from 'browser-image-compression';
+import { Snackbar, Alert, TextField } from '@mui/material';
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState('wikipedia');
@@ -13,13 +15,141 @@ const Home = () => {
   const [activeFormat, setActiveFormat] = useState('p5js');
   const [simulationActive, setSimulationActive] = useState(false);
   const [codeOutput, setCodeOutput] = useState('');
-  const [consoleOutput, setConsoleOutput] = useState('');
   const [summary, setSummary] = useState('');
+
+  const [showImageUpload, setShowImageUpload] = useState(false);
+   const [imagePreview, setImagePreview] = useState('');
+   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [apiKey, setApiKey] = useState('');
+  const [apiKeySaved, setApiKeySaved] = useState(false);
+  
+  const verifyApiKeyStorage = () => {
+    const localStorageKey = localStorage.getItem('apiKey');
+    console.log('LocalStorage API Key:', localStorageKey);
+
+    const cookies = document.cookie.split('; ');
+    const apiKeyCookie = cookies.find(row => row.startsWith('apiKey='));
+    const cookieValue = apiKeyCookie ? apiKeyCookie.split('=')[1] : null;
+    console.log('Cookie API Key:', cookieValue);
+    console.log('Current State API Key:', apiKey);
+    return {
+      localStorageMatch: localStorageKey === apiKey,
+      cookieMatch: cookieValue === apiKey,
+      allMatch: localStorageKey === apiKey && cookieValue === apiKey
+    };
+  };
+  const saveApiKey = (key) => {
+    if (key.trim()) {
+      localStorage.setItem('apiKey', key);
+      document.cookie = `apiKey=${key}; path=/`;
+      setApiKeySaved(true);
+    } else {
+      localStorage.removeItem('apiKey');
+      document.cookie = 'apiKey=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      setApiKeySaved(false);
+    }
+  };
+  const handleApiKeyChange = (e) => {
+    setApiKey(e.target.value);
+    setApiKeySaved(false);
+  };
+  const fetchImageData = async () => {
+    setSimulationActive(false)
+    
+    if (!imagePreview) {
+      showSnackbar('Please select an image first', 'error');
+      return;
+    }
+    
+    setIsProcessing(true);
+    setCodeOutput('');
+    
+    try {
+      console.log('Submitting image to Claude API');
+      showSnackbar('Processing image...', 'info');
+      const response = await fetch('/api/upload_gpt4v/route', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          file: imagePreview,
+          formate:activeFormat 
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+            setCodeOutput(data?.p5jsCode || data?.codeOutput);
+            setSummary(data?.summary || "Image processed successfully");
+            showSnackbar('Image processed successfully!', 'success');
+          } else {
+            showSnackbar(data.message || 'Failed to process image', 'error');
+          }
+        } else {
+          showSnackbar(`Server error: ${response.statusText}`, 'error');
+        }
+      } catch (error) {
+        showSnackbar('Failed to process image. Please check your connection.', 'error');
+        console.error('Error calling API:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+  const handleFileChange = async (e) => {
+      const file = e.target.files[0];
+    
+      if (file) {
+        // Validate file type
+        const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+        if (!validImageTypes.includes(file.type)) {
+          showSnackbar('Please select a valid image file (JPEG, PNG, JPG, or WEBP)', 'error');
+          return;
+        }
+    
+        if (file.size > 10 * 1024 * 1024) {
+          showSnackbar('Image size exceeds 10MB limit. Please select a smaller image.', 'warning');
+          return;
+        }
+    
+        // Compression options
+        const options = {
+          maxSizeMB: 1, // Compress to ~1MB
+          maxWidthOrHeight: 1920, 
+          useWebWorker: true
+        };
+    
+        try {
+          // Compress image
+          const compressedFile = await imageCompression(file, options);
+    
+          // Convert compressed file to Base64
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setImagePreview(reader.result); // Update image preview
+            showSnackbar('Image ready for upload!', 'success');
+          };
+          reader.readAsDataURL(compressedFile);
+    
+        } catch (error) {
+          console.error('Image compression failed:', error);
+          showSnackbar('Error compressing image. Please try again.', 'error');
+        }
+      }
+    };
   
   
 
   const fetchWikiData = async () => {
     if (!wikipediaInput) return;
+    if (!apiKey) {
+      alert('Please enter and save your API key first');
+      return;
+    }
     setIsProcessing(true);
     try {
       console.log('Fetching Wikipedia data for:', wikipediaInput);
@@ -35,6 +165,15 @@ const Home = () => {
   const handleFormatChange = (id) => {
     setActiveFormat(id);
   };
+  const handleApiKeySubmit = (e) => {
+    e.preventDefault();
+    const verification = verifyApiKeyStorage();
+    if (!verification.allMatch) {
+      console.warn('Storage verification failed:', verification);
+      saveApiKey(apiKey);
+    }
+  };
+
 
   const FormatButton = ({ id, label, icon, isActive }) => (
     <button
@@ -52,6 +191,12 @@ const Home = () => {
     }
   }, [wikipediaInput]);
 
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
 
   return (
     <div className='bg-white'>
@@ -59,7 +204,6 @@ const Home = () => {
          <Header />
     <div className="mb-6 ">
     <div className="space-y-6 ">
-                    {/* Input Panel */}
     <div className="bg-white  p-6 shadow-md  ">{activeTab === 'wikipedia' && (
     <>
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><span>🔗</span> Wikipedia Link</h3>
@@ -73,12 +217,11 @@ const Home = () => {
             disabled={isProcessing}/>
           <button type="submit" className={`bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700  shrink-0 ${
             isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={isProcessing}>
+               disabled={isProcessing || !apiKey} >
             <span>🔍</span>
           </button>
     </div>
 
-      {/* Format Buttons */}
       <div className=" w-full md:w-auto flex gap-2   overflow-x-auto  pb-2 md:pb-0 lg:pl-16">
         <FormatButton 
             id="mermaidjs" 
@@ -97,7 +240,7 @@ const Home = () => {
             id="threejs" 
             label="Three.js" 
             icon="🧊" 
-            // isActive={activeFormat === 'threejs'} 
+            isActive={activeFormat === 'threejs'} 
           />
           <FormatButton 
             id="d3js" 
@@ -163,10 +306,23 @@ const Home = () => {
 
 <div className="bg-white pt-3 shadow-md flex flex-col md:flex-row gap-4 p-4">
 <div className="w-full md:w-1/2 flex flex-col sm:flex-row gap-4 items-center">
-<input 
-type="text" placeholder="Type in your API Key"
-className="w-full sm:flex-1 px-4 py-3 bg-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-/>
+<form onSubmit={handleApiKeySubmit} className="relative w-full sm:flex-1">
+              <input 
+                type="password" 
+                value={apiKey}
+                onChange={handleApiKeyChange}
+                placeholder="Type in your API Key" 
+                className="w-full sm:flex-1 px-4 py-3 bg-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <button 
+                type="submit" 
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
+                disabled={!apiKey}
+              >
+                {apiKeySaved ? '✓' : <SendIcon />}
+              </button>
+            </form>
+
 <select className="w-full sm:w-60 px-4 py-3 border-2 border-black rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
     <option value="1" >Model</option>
     <option value="2">1</option>
@@ -197,24 +353,89 @@ className="w-full sm:flex-1 px-4 py-3 bg-gray-200 rounded-lg focus:ring-2 focus:
 {/* Prompt Input Container */}
 <div className="bg-white   shadow-md pt-3">
   <div className="space-y-4">
-    <div className="relative   bg-gray-200 ">
-      <div className="h-32 p-4 
-                 outline-none overflow-y-auto font-mono text-sm
-                 whitespace-pre-wrap"
-        contentEditable
-        role="textbox"
-        aria-multiline="true"
-        data-placeholder="Prompt Input"
-      >
-        {/* Text content will go here */}
-    </div>
-    {/* Icons Section - Absolute positioned at bottom */}
+    <div className="relative   bg-gray-200 h-32 ">
+      <input className="w-full p-4  outline-none overflow-y-auto font-mono text-sm "placeholder="Prompt Input"/>
       <div className=" absolute bottom-0 left-0 right-0  flex justify-between items-center px-4 pb-2 ">
         {/* Left Side Icons */}
-        <div className="flex  gap-2  ">
-          <button className='pr-2' >
+        <div className="flex  gap-2 ">
+          <button className='pr-2' onClick={() => setShowImageUpload(true)} >
            <ControlPointIcon sx={{ fontSize: 35 }}  aria-label="Add icon" />
           </button>
+          {showImageUpload && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <span>🖼️</span> Image Upload
+        </h3>
+        <button 
+          onClick={() => setShowImageUpload(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+      </div>
+      
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        fetchImageData();
+        setShowImageUpload(false);
+      }} className="space-y-4">
+        <div className="border-2 border-dashed rounded-lg p-6 text-center">
+          {imagePreview ? (
+            <div className="space-y-4">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="max-h-48 mx-auto rounded"
+              />
+              <button
+                type="button"
+                onClick={() => setImagePreview('')}
+                className="text-red-500 hover:text-red-700"
+              >
+                Remove Image
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <span className="text-4xl">📤</span>
+              <p className="text-gray-500">
+                Drag and drop an image here, or click to select
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+                disabled={isProcessing}
+              />
+              <label
+                htmlFor="file-upload"
+                className="inline-block bg-gray-200 text-gray-700 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-300"
+              >
+                Select File
+              </label>
+            </div>
+          )}
+        </div>
+        
+        {imagePreview && (
+          <button
+            type="submit"
+            className={`w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isProcessing}
+          >
+            {isProcessing ? 'Analyzing...' : 'Analyze Image'}
+          </button>
+        )}
+      </form>
+    </div>
+  </div>
+)}
           <button>
            <CameraAltOutlinedIcon sx={{ fontSize: 35 }}  aria-label="Add icon" />
           </button>
@@ -252,6 +473,20 @@ className="w-full sm:flex-1 px-4 py-3 bg-gray-200 rounded-lg focus:ring-2 focus:
                 )}
               </div>
             </div>
+            <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Alert 
+            onClose={() => setSnackbarOpen(false)} 
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
    </main>  
    </div>   
   );

@@ -6,7 +6,7 @@ function ImageUploader(props) {
     handleDrop,
     handleDragOver,
     handleDragLeave,
-    handleFileChange: originalHandleFileChange,
+    handleFileChange: originalHandleFileChange=()=>{},
     preview,
     uploadProgress,
     handleSubmit,
