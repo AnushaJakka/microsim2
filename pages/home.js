@@ -8,6 +8,7 @@ import SendIcon from '@mui/icons-material/Send';
 import imageCompression from 'browser-image-compression';
 import { Snackbar, Alert, TextField } from '@mui/material';
 
+
 const Home = () => {
   const [activeTab, setActiveTab] = useState('wikipedia');
   const [wikipediaInput, setWikipediaInput] = useState('');
@@ -16,16 +17,280 @@ const Home = () => {
   const [simulationActive, setSimulationActive] = useState(false);
   const [codeOutput, setCodeOutput] = useState('');
   const [summary, setSummary] = useState('');
+  const [textInput, setTextInput] = useState('');
+  const [consoleOutput, setConsoleOutput] = useState('');
 
   const [showImageUpload, setShowImageUpload] = useState(false);
    const [imagePreview, setImagePreview] = useState('');
    const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-  const [apiKey, setApiKey] = useState('');
   const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [concept, setConcept] = useState({ name: '', principles: [] });
+const [interactivityNotes, setInteractivityNotes] = useState('');
+const [learningObjectives, setLearningObjectives] = useState([]);
+  const [error, setError] = useState(null);
+  const [showProFeatures, setShowProFeatures] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+
+
   
-  const verifyApiKeyStorage = () => {
+ 
+   const fetchImageData = async () => {
+     setSimulationActive(false)
+     
+     // Validate we have an image file
+     if (!imagePreview) {
+       alert('Please select an image first');
+       showSnackbar('Please select an image first', 'error');
+       return;
+     }
+     
+     setIsProcessing(true);
+     setCodeOutput('');
+     
+     try {
+       console.log('Submitting image to Claude API');
+       
+       // Send the base64 image data directly to the API
+       const response = await fetch('/api/upload_gpt4v/route', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({
+           file: imagePreview,
+           formate:activeFormat // Base64 string from handleFileChange
+         }),
+       });
+       
+       if (response.ok) {
+         try {
+           const data = await response.json();
+           console.log('API response received:', data);
+           
+           
+           if (data.success) {
+             // The backend now parses the JSON and returns the code directly
+             if (data.p5jsCode) {
+               console.log('Successfully received p5.js code');
+               setCodeOutput(data?.p5jsCode)
+               setSummary(data?.summary)
+               showSnackbar('Image analysis completed successfully!', 'success');  
+             } else {
+               console.error('No code found in response:', data);
+               alert('No code was generated. Please try a different image.');
+             }
+           } else {
+             alert(`Error: ${data.message || 'Failed to process image'}`);
+             console.error('API Error:', data.message);
+             showSnackbar(data.message || 'Failed to process image', 'error');
+           }
+         } catch (parseError) {
+           console.error('Error parsing JSON from backend:', parseError);
+           alert('Error processing the API response. Please try again.');
+         }
+       } else {
+         console.error('API returned error status:', response.status);
+         alert(`Server error: ${response.statusText}`);
+         showSnackbar(`Server error: ${response.statusText}`, 'error');
+       }
+     } catch (error) {
+       alert('Failed to process image. Please check your connection.');
+       console.error('Error calling API:', error);
+       showSnackbar('Failed to process image. Please check your connection.', 'error');
+     }
+     
+     setIsProcessing(false);
+   };
+   
+   const fetchWikiData = async () => {
+    setSimulationActive(false)
+    if (!wikipediaInput) return;
+
+    setIsProcessing(true);
+    setSummary("");
+    setError(null);
+
+    try {
+      const response = await fetch("/api/wiki", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          source: "wikipedia",
+          input: wikipediaInput,
+          format: activeFormat,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to generate visualization");
+      }
+
+      setSummary(data.summary);
+      setCodeOutput(data.codeOutputs?.[activeFormat] || "");
+      setConcept({
+        name: data.concept?.name || "",
+        principles: data.concept?.principles || [],
+      });
+      setInteractivityNotes(data.interactivityNotes || "");
+      setLearningObjectives(data.learningObjectives || "");
+    } catch (error) {
+      console.error("Error submitting text:", error);
+      setError(error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+   
+   const handleFileChange = async (e) => {
+     const file = e.target.files[0];
+   
+     if (file) {
+       // Validate file type
+       const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+       if (!validImageTypes.includes(file.type)) {
+        showSnackbar('Please select a valid image file (JPEG, PNG, JPG, or WEBP)', 'error');
+         return;
+       }
+   
+       // Validate file size (max 10MB)
+       if (file.size > 10 * 1024 * 1024) {
+        showSnackbar('Image size exceeds 10MB limit. Please select a smaller image.', 'error');
+         return;
+       }
+   
+       // Compression options
+       const options = {
+         maxSizeMB: 1, // Compress to ~1MB
+         maxWidthOrHeight: 1920, // Max width or height
+         useWebWorker: true
+       };
+   
+       try {
+         // Compress image
+         const compressedFile = await imageCompression(file, options);
+   
+         // Convert compressed file to Base64
+         const reader = new FileReader();
+         reader.onloadend = () => {
+           setImagePreview(reader.result); // Update image preview
+           showSnackbar('Image uploaded successfully!', 'success');
+         };
+         reader.readAsDataURL(compressedFile);
+   
+       } catch (error) {
+         console.error('Image compression failed:', error);
+         showSnackbar('Error compressing image. Please try again.', 'error');
+       }
+     }
+   };
+ 
+
+   useEffect(() => {
+    if (activeTab === 'wikipedia' && wikipediaInput) {
+      fetchWikiData();
+    }
+  }, [wikipediaInput, activeTab]);
+ 
+   
+   const fetchData = async () => {
+     setSimulationActive(false)
+     if (!textInput) return;
+ 
+     setIsProcessing(true);
+     setSummary("");
+     setError(null);
+ 
+     try {
+       const response = await fetch("/api/generate", {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+         },
+         body: JSON.stringify({
+           source: "text",
+           input: textInput,
+           format: activeFormat,
+         }),
+       });
+ 
+       const data = await response.json();
+ 
+       if (!data.success) {
+         throw new Error(data.error || "Failed to generate visualization");
+       }
+ 
+       setSummary(data.summary);
+       setCodeOutput(data.codeOutputs?.[activeFormat] || "");
+       setConcept({
+         name: data.concept?.name || "",
+         principles: data.concept?.principles || [],
+       });
+       setInteractivityNotes(data.interactivityNotes || "");
+       setLearningObjectives(data.learningObjectives || "");
+     } catch (error) {
+       console.error("Error submitting text:", error);
+       setError(error.message);
+     } finally {
+       setIsProcessing(false);
+     }
+   };
+ 
+   console.log(activeTab)
+ 
+   // Call fetchData when `activeFormat` changes
+   useEffect(() => {
+     if(activeTab === "text"){
+       if (activeFormat) {
+         fetchData();
+       }
+     }
+     else if(activeTab === "image"){
+       if (activeFormat) {
+         fetchImageData();
+       }
+     }
+     
+   }, [activeFormat]); // API call will re-run when `activeFormat` changes
+   
+   
+   const addConsoleOutput = (message, isError = false) => {
+     const timestamp = new Date().toLocaleTimeString();
+     const formattedMessage = `[${timestamp}] ${isError ? '🔴 ' : ''}${message}`;
+     setConsoleOutput(prev => `${prev ? prev + '\n' : ''}${formattedMessage}`);
+   };
+   
+   const handleFormatChange = (id) => {
+    setActiveFormat(id);
+  };
+  const handleApiKeySubmit = (e) => {
+    e.preventDefault();
+    const verification = verifyApiKeyStorage();
+    if (!verification.allMatch) {
+      console.warn('Storage verification failed:', verification);
+      saveApiKey(apiKey);
+    }
+    showSnackbar('API Key saved successfully!');
+  };
+ 
+   const FormatButton = ({ id, label, icon, isActive }) => (
+     <button
+       onClick={() => handleFormatChange(id)}
+       className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-colors ${
+         isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+       }`}
+     >
+       <span>{icon}</span>
+       <span>{label}</span>
+     </button>
+   );
+
+   const verifyApiKeyStorage = () => {
     const localStorageKey = localStorage.getItem('apiKey');
     console.log('LocalStorage API Key:', localStorageKey);
 
@@ -55,142 +320,6 @@ const Home = () => {
     setApiKey(e.target.value);
     setApiKeySaved(false);
   };
-  const fetchImageData = async () => {
-    setSimulationActive(false)
-    
-    if (!imagePreview) {
-      showSnackbar('Please select an image first', 'error');
-      return;
-    }
-    
-    setIsProcessing(true);
-    setCodeOutput('');
-    
-    try {
-      console.log('Submitting image to Claude API');
-      showSnackbar('Processing image...', 'info');
-      const response = await fetch('/api/upload_gpt4v/route', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file: imagePreview,
-          formate:activeFormat 
-        }),
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-            setCodeOutput(data?.p5jsCode || data?.codeOutput);
-            setSummary(data?.summary || "Image processed successfully");
-            showSnackbar('Image processed successfully!', 'success');
-          } else {
-            showSnackbar(data.message || 'Failed to process image', 'error');
-          }
-        } else {
-          showSnackbar(`Server error: ${response.statusText}`, 'error');
-        }
-      } catch (error) {
-        showSnackbar('Failed to process image. Please check your connection.', 'error');
-        console.error('Error calling API:', error);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
-  const handleFileChange = async (e) => {
-      const file = e.target.files[0];
-    
-      if (file) {
-        // Validate file type
-        const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-        if (!validImageTypes.includes(file.type)) {
-          showSnackbar('Please select a valid image file (JPEG, PNG, JPG, or WEBP)', 'error');
-          return;
-        }
-    
-        if (file.size > 10 * 1024 * 1024) {
-          showSnackbar('Image size exceeds 10MB limit. Please select a smaller image.', 'warning');
-          return;
-        }
-    
-        // Compression options
-        const options = {
-          maxSizeMB: 1, // Compress to ~1MB
-          maxWidthOrHeight: 1920, 
-          useWebWorker: true
-        };
-    
-        try {
-          // Compress image
-          const compressedFile = await imageCompression(file, options);
-    
-          // Convert compressed file to Base64
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setImagePreview(reader.result); // Update image preview
-            showSnackbar('Image ready for upload!', 'success');
-          };
-          reader.readAsDataURL(compressedFile);
-    
-        } catch (error) {
-          console.error('Image compression failed:', error);
-          showSnackbar('Error compressing image. Please try again.', 'error');
-        }
-      }
-    };
-  
-  
-
-  const fetchWikiData = async () => {
-    if (!wikipediaInput) return;
-    if (!apiKey) {
-      alert('Please enter and save your API key first');
-      return;
-    }
-    setIsProcessing(true);
-    try {
-      console.log('Fetching Wikipedia data for:', wikipediaInput);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setSummary(`Fetched summary for ${wikipediaInput}`);
-    } catch (error) {
-      console.error('Error fetching Wikipedia data:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleFormatChange = (id) => {
-    setActiveFormat(id);
-  };
-  const handleApiKeySubmit = (e) => {
-    e.preventDefault();
-    const verification = verifyApiKeyStorage();
-    if (!verification.allMatch) {
-      console.warn('Storage verification failed:', verification);
-      saveApiKey(apiKey);
-    }
-  };
-
-
-  const FormatButton = ({ id, label, icon, isActive }) => (
-    <button
-      onClick={() => handleFormatChange(id)}
-      className={`flex items-center gap-2 pl-9 pr-3  py-2 lg:pl-6 lg:pr-8 lg:py-2.5 rounded-lg text-sm transition-colors ${
-        isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-      } whitespace-nowrap`}>
-      <span >{icon}</span><span >{label}</span>
-    </button>
-  );
-
-  useEffect(() => {
-    if (activeTab === 'wikipedia' && wikipediaInput) {
-      fetchWikiData();
-    }
-  }, [wikipediaInput]);
-
   const showSnackbar = (message, severity = 'success') => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
@@ -207,10 +336,7 @@ const Home = () => {
     <div className="bg-white  p-6 shadow-md  ">{activeTab === 'wikipedia' && (
     <>
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><span>🔗</span> Wikipedia Link</h3>
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        fetchWikiData();
-      }} className="flex flex-col md:flex-row gap-4  items-start w-full">
+      <form    className="flex flex-col md:flex-row gap-4  items-start w-full">
       {/* Input Group */}
     <div className="flex gap-2 w-full md:w-auto">
       <input type="text" value={wikipediaInput} onChange={(e) => setWikipediaInput(e.target.value)} placeholder="Enter Wikipedia URL" className="w-full border rounded-lg px-4 py-2 md:min-w-[400px] lg:min-w-[480px]"
@@ -223,26 +349,26 @@ const Home = () => {
     </div>
 
       <div className=" w-full md:w-auto flex gap-2   overflow-x-auto  pb-2 md:pb-0 lg:pl-16">
-        <FormatButton 
+        <FormatButton  
             id="mermaidjs" 
             label="Mermaid" 
             icon="🔀" 
             isActive={activeFormat === 'mermaidjs'} 
           />
-          <FormatButton 
+          <FormatButton  
             id="p5js" 
             label="p5.js" 
             icon="🎨" 
             isActive={activeFormat === 'p5js'}
              
           />
-          <FormatButton 
+          <FormatButton  
             id="threejs" 
             label="Three.js" 
             icon="🧊" 
             isActive={activeFormat === 'threejs'} 
           />
-          <FormatButton 
+          <FormatButton  
             id="d3js" 
             label="D3.js" 
             icon="📊" 
@@ -292,13 +418,12 @@ const Home = () => {
       <div className="bg-gray-900 text-gray-300 p-4 rounded-lg font-mono text-sm flex-1 flex overflow-auto">
         {simulationActive ? (
           <div className="w-full h-full bg-black text-white">
-             {/* {activeFormat=== "p5js" && <P5jS running={true} result={codeOutput}/>}
+             {activeFormat=== "p5js" && <P5jS running={true} result={codeOutput}/>}
             {activeFormat=== "threejs" && <ThreejS running={true} result={codeOutput}/>}
             {activeFormat=== "d3js" && <D3Editor running={true} result={codeOutput}/>}
-            {activeFormat=== "mermaidjs" && <MermaidEditor running={true} result={codeOutput}/>}  */}
+            {activeFormat=== "mermaidjs" && <MermaidEditor running={true} result={codeOutput}/>} 
           </div>
-        ) :null
-        }
+        ) :null}
       </div>
     </div>
   </div>
@@ -323,45 +448,69 @@ const Home = () => {
               </button>
             </form>
 
-<select className="w-full sm:w-60 px-4 py-3 border-2 border-black rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
-    <option value="1" >Model</option>
-    <option value="2">1</option>
-    <option value="3">2</option>
-    </select>
+ <select onChange={(e) => setTextInput(e.target.value)} className="w-full sm:w-60 px-4 py-3 border-2 border-black rounded-lg bg-white focus:ring-2 focus:ring-blue-500" value={textInput}
+ disabled={isProcessing} >
+       <option value="Claude-instant">Claude</option>
+</select>
 </div>
 <div className="w-full md:w-1/2 flex flex-col sm:flex-row gap-4 items-center">
-<select className="w-full sm:w-48 px-4 py-3 border-2 border-black rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
-      <option>Example</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-    </select>
+<select onChange={(e) => setTextInput(e.target.value)} className="w-full sm:w-48 px-4 py-3 border-2 border-black rounded-lg bg-white focus:ring-2 focus:ring-blue-500" value={textInput}
+ disabled={isProcessing}  >
+                      <option value="">-- Select a template --</option>
+                      <option value="Conway's Game of Life">Conway's Game of Life</option>
+                      <option value="2D flocking animation">2D Flocking Animation</option>
+                      <option value="3D forms panning">3D Forms Panning</option>
+                      <option value="Wave propagation">Wave Propagation</option>
+                    </select>
     <div className='flex-1'></div>
     <div className="flex gap-4 ml-auto">
-      <button 
+     <button 
                     className={`p-2 rounded-lg ${simulationActive ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}
                     onClick={() => setSimulationActive(!simulationActive)}
                   >
                     {simulationActive ? '⏹️' : '▶️'}
                   </button>
-                  <button className="p-2 rounded-lg bg-blue-100 text-blue-600 gap-2">
+                  <button className="p-2 rounded-lg bg-blue-100 text-blue-600">
                     💾
                   </button>
    </div>
 </div>
 </div>
 {/* Prompt Input Container */}
-<div className="bg-white   shadow-md pt-3">
-  <div className="space-y-4">
-    <div className="relative   bg-gray-200 h-32 ">
-      <input className="w-full p-4  outline-none overflow-y-auto font-mono text-sm "placeholder="Prompt Input"/>
-      <div className=" absolute bottom-0 left-0 right-0  flex justify-between items-center px-4 pb-2 ">
-        {/* Left Side Icons */}
-        <div className="flex  gap-2 ">
-          <button className='pr-2' onClick={() => setShowImageUpload(true)} >
-           <ControlPointIcon sx={{ fontSize: 35 }}  aria-label="Add icon" />
-          </button>
-          {showImageUpload && (
+<div className="bg-white shadow-md rounded-lg overflow-hidden">
+  <div className="p-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        fetchData();
+      }}
+      className="space-y-4"
+    >
+      {/* Text Input Area */}
+      <div className="relative">
+        <textarea
+          value={textInput}
+          onChange={(e) => setTextInput(e.target.value)}
+          placeholder="Describe what you want to visualize..."
+          rows={4}
+          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          disabled={isProcessing}
+          aria-label="Description input for visualization"
+        />
+        <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
+          {/* Left Action Buttons */}
+          <div className="flex gap-2">
+            {/* Image Upload Button */}
+            <button
+              type="button"
+              onClick={() => setShowImageUpload(true)}
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              aria-label="Upload image"
+              disabled={isProcessing}
+            >
+              <ControlPointIcon sx={{ fontSize: 28 }} />
+            </button>
+            {showImageUpload && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div className="bg-white rounded-lg p-6 max-w-md w-full">
       <div className="flex justify-between items-center mb-4">
@@ -436,19 +585,36 @@ const Home = () => {
     </div>
   </div>
 )}
-          <button>
-           <CameraAltOutlinedIcon sx={{ fontSize: 35 }}  aria-label="Add icon" />
+            
+            {/* Camera Button (if needed) */}
+            <button
+              type="button"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              aria-label="Open camera"
+              disabled={isProcessing}
+            >
+              <CameraAltOutlinedIcon sx={{ fontSize: 28 }} />
+            </button>
+          </div>
+          <button type="button"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              aria-label="Add icon"
+              disabled={isProcessing}>
+           <ArrowCircleUpIcon sx={{ fontSize: 28 }}   />
           </button>
+          
+         
         </div>
-        {/* Right Side Icon */}
-        <button >
-           <ArrowCircleUpIcon sx={{ fontSize: 35 }}  aria-label="Add icon" />
-          </button>
       </div>
+      
+      {/* Main Submit Button (hidden on mobile) */}
+      
+    </form>
   </div>
 </div>
-</div>
 
+
+  
 
  {/* Summary */}
  <div className="bg-white  p-3 shadow-md">
@@ -458,8 +624,20 @@ const Home = () => {
                 </h3>
                 <div className="flex items-center justify-between w-full sm:w-auto gap-2">
                 <span className="text-sm">Console log</span>
-                <ExpandCircleDownOutlinedIcon sx={{ fontSize: 20 }}  aria-label="Expand menu" />
-  </div>   
+                <button 
+        onClick={() => setShowProFeatures(!showProFeatures)}
+        className="flex items-center gap-1"
+      >
+        <ExpandCircleDownOutlinedIcon 
+          sx={{ 
+            fontSize: 20,
+            transform: showProFeatures ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease'
+          }} 
+          aria-label="Toggle pro features" 
+        />
+      </button>
+              </div>   
  </div>
 <div className="bg-gray-50 p-4 rounded-lg">
   {isProcessing ? (
@@ -469,24 +647,42 @@ const Home = () => {
     <div className="h-4 bg-gray-200 rounded w-4/6"></div>
                   </div>
                 ) : (
+                  <>
                   <p className="text-gray-700">{summary || "Summary will appear here"}</p>
+                  {showProFeatures && (
+                    <div className="mt-3 flex justify-end">
+            <button
+              className="px-3 py-1 rounded-lg text-sm bg-purple-100 text-purple-600 hover:bg-purple-200 transition-colors"
+              disabled={!summary}
+              onClick={() => {
+                // Add your MCQ generation logic here
+                console.log("Generating MCQs based on:", summary);
+              }}
+            >
+              Generate MCQ
+            </button>
+          </div>
+                  )}
+                  </>
                 )}
               </div>
             </div>
+
+            
             <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={6000}
-          onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        >
-          <Alert 
-            onClose={() => setSnackbarOpen(false)} 
-            severity={snackbarSeverity}
-            sx={{ width: '100%' }}
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
+  open={snackbarOpen}
+  autoHideDuration={6000}
+  onClose={() => setSnackbarOpen(false)}
+  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+>
+  <Alert 
+    onClose={() => setSnackbarOpen(false)} 
+    severity={snackbarSeverity}
+    sx={{ width: '100%' }}
+  >
+    {snackbarMessage}
+  </Alert>
+</Snackbar>
    </main>  
    </div>   
   );
