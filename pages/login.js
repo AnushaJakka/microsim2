@@ -68,30 +68,60 @@ const Login = () => {
   };
   
   return (
-    <Box>
-      <Stack flexDirection={"row"} justifyContent={"center"} alignItems={"center"} display={{ md: "none" }}>
-        <Stack alignItems={"flex-end"}>
+    <Box  sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Stack flexDirection={"row"} justifyContent={"center"} alignItems={"center"} spacing={2}
+        sx={{ 
+          display: { md: "none", xs: "flex" },
+          py: 2,
+          px: 1
+        }}>
           <img src='/static/images/MicroSim Learning Logo-Black.png' alt ="logo" width={60} />
-        </Stack>
         <Typography fontSize={{ md: "20", xs: 25 }}  fontWeight={"bold"} my={3} >
         MicroSim Learning
         </Typography>
       </Stack>
 
-      <Grid container alignItems={"center"}>
-        <Grid md={6} sx={{display:{xs:"none",md:"flex"}}}>
-          <Stack flexDirection={"row"} alignItems={"center"} justifyContent={"center"} ml={6}>
-            <img src='/static/images/MicroSim Learning Logo-Black.png' alt ="logo" width={100} height={100}/>
-            <Typography fontSize={35} fontWeight={"bold"}>MicroSim Learning</Typography>
+      <Grid container alignItems={"center"} >
+        <Grid md={6} sx={{
+            display: { xs: "none", md: "flex" },
+            justifyContent: "center",
+            alignItems: "center",
+            height: '100%'
+          }}>
+          <Stack 
+            direction="row" 
+            alignItems="center"
+            spacing={2}
+            sx={{ 
+              maxWidth: 500,
+              width: '100%',
+              px: 4
+            }}
+          >
+            <img src='/static/images/MicroSim Learning Logo-Black.png' alt ="logo" width={90} height={90}/>
+            <Typography fontSize={28} fontWeight={"bold"} padding={2} >MicroSim Learning</Typography>
           </Stack>
         </Grid>
-        <Grid item xs={12} md={6} sx={{paddingLeft:{ xs: 2, md: 40 }} }>
+         <Grid 
+          item 
+          xs={12} 
+          md={6}
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            p: { xs: 2, md: 4 },
+            marginLeft:{ xs: 0, md: 25 },
+          }}
+        >
           <Paper
             elevation={3}
             sx={{
               display: "flex", justifyContent: 'center', flexDirection: "column", alignItems: "center",
-              mt: { md: "10%", xs: "0" }, mb: { md: "10%", xs: "25%" }, p: 3, mx: {xs:"5%",md:'auto'}, width: "450",
-              boxShadow:10
+              p: { xs: 2, sm: 3, md: 4 },
+              width: '100%',
+              maxWidth: 450,
+              boxShadow: { xs: 3, md: 10 }
             }}
             component="form"
             noValidate

@@ -282,7 +282,7 @@ const Register = () => {
                 </Alert>
               </Snackbar>
   
-              <Typography mt={1} ml={{ xs: 3, sm: 3, md: 7 }}>
+              <Typography mt={1} ml={{ xs: 4, sm: 4, md: 7 }}>
                 Already have an account? {' '}
                 <Link href="/login" passHref legacyBehavior>
                   <MuiLink underline='none'>
