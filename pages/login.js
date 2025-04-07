@@ -86,7 +86,8 @@ const Login = () => {
             display: { xs: "none", md: "flex" },
             justifyContent: "center",
             alignItems: "center",
-            height: '100%'
+            height: '100%',
+            margin:{ xs: 10, md: 5 },
           }}>
           <Stack 
             direction="row" 
@@ -102,6 +103,7 @@ const Login = () => {
             <Typography fontSize={28} fontWeight={"bold"} padding={2} >MicroSim Learning</Typography>
           </Stack>
         </Grid>
+        <Grid container alignItems={"center"} justifyContent="center"sx={{ minHeight: '100vh' }}>
          <Grid 
           item 
           xs={12} 
@@ -111,7 +113,7 @@ const Login = () => {
             justifyContent: 'center',
             alignItems: 'center',
             p: { xs: 2, md: 4 },
-            marginLeft:{ xs: 0, md: 25 },
+             marginLeft: { xs: 0, sm: 26, md: 20 }, 
           }}
         >
           <Paper
@@ -120,8 +122,9 @@ const Login = () => {
               display: "flex", justifyContent: 'center', flexDirection: "column", alignItems: "center",
               p: { xs: 2, sm: 3, md: 4 },
               width: '100%',
-              maxWidth: 450,
-              boxShadow: { xs: 3, md: 10 }
+              maxWidth: { xs: 400, sm: 600, md: 500 },
+              boxShadow: { xs: 3, md: 10 },
+               margin: "auto"
             }}
             component="form"
             noValidate
@@ -202,6 +205,7 @@ const Login = () => {
             {snackbarMessage}
           </Alert>
         </Snackbar>
+        </Grid>
       </Grid>
     </Box>
   );

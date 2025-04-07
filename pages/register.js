@@ -109,25 +109,52 @@ const Register = () => {
   };
 
     return (
-      <Box >
-       <Stack flexDirection={"row"} justifyContent={"center"} alignItems={"center"} display={{ md: "none" }}>
-               <Stack alignItems={"flex-end"}>
-                 <img src='/static/images/MicroSim Learning Logo-Black.png' alt ="logo" width={60} />
-               </Stack>
-               <Typography fontSize={{ md: "20", xs: 25 }}  fontWeight={"bold"} my={3} >
-               MicroSim Learning
-               </Typography>
-             </Stack>
+      <Box  sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Stack flexDirection={"row"} justifyContent={"center"} alignItems={"center"} spacing={2}
+        sx={{ 
+          display: { md: "none", xs: "flex" },
+          py: 2,
+          px: 1
+        }}>
+          <img src='/static/images/MicroSim Learning Logo-Black.png' alt ="logo" width={60} />
+        <Typography fontSize={{ md: "20", xs: 25 }}  fontWeight={"bold"} my={3} >
+        MicroSim Learning
+        </Typography>
+      </Stack>
   
-        <Grid container alignItems={"center"}>
-          <Grid md={6} sx={{ display: { xs: "none", md: "flex" } }}>
-            <Stack flexDirection={"row"} alignItems={"center"} justifyContent={"center"} ml={6}>
-              <img src='/static/images/MicroSim Learning Logo-Black.png' alt="logo" width={100} height={100} />
-              <Typography fontSize={35} fontWeight={"bold"}> MicroSim Learning</Typography>
-            </Stack>
-          </Grid>
-  
-          <Grid item xs={12} md={6} sx={{ paddingLeft: { xs: 0, md: 40 }, paddingRight: { xs: "7", md: 0 } } }>
+       <Grid container alignItems={"center"} >
+               <Grid md={6} sx={{
+                   display: { xs: "none", md: "flex" },
+                   justifyContent: "center",
+                   alignItems: "center",
+                   height: '100%'
+                 }}>
+                 <Stack 
+                   direction="row" 
+                   alignItems="center"
+                   spacing={2}
+                   sx={{ 
+                     maxWidth: 500,
+                     width: '100%',
+                     px: 4
+                   }}
+                 >
+                   <img src='/static/images/MicroSim Learning Logo-Black.png' alt ="logo" width={90} height={90}/>
+                   <Typography fontSize={28} fontWeight={"bold"} padding={2} >MicroSim Learning</Typography>
+                 </Stack>
+               </Grid>
+                <Grid 
+                 item 
+                 xs={12} 
+                 md={6}
+                 sx={{
+                   display: 'flex',
+                   justifyContent: 'center',
+                   alignItems: 'center',
+                   p: { xs: 2, md: 2 },
+                   marginLeft: { xs: 0, sm: 20, md: 38 }
+                 }}
+               >
             <Paper
               elevation={3}
               sx={{
@@ -140,7 +167,7 @@ const Register = () => {
                 mr:{md:"20", xs:"30%"},
                 p: 3,
                 mx: {xs:"5%",md:'auto'},
-                width: {md:400,xs:"400",sm:200},
+                width: {md: 420, sm: 380, xs: 360},
                 boxShadow:10
               }}
               component="form"
